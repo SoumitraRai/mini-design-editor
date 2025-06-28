@@ -9,10 +9,17 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@shopify/react-native-skia": "2.0.0-next.4",
     "expo": "~53.0.13",
+    "expo-image-picker": "~16.1.4",
+    "expo-media-library": "~17.1.7",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
-    "react-native": "0.79.4"
+    "react-native": "0.79.4",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-skia": "^0.0.1",
+    "react-native-view-shot": "^4.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
