@@ -14,7 +14,7 @@ export default function useCanvasElements() {
     }
   };
 
-  // Use a more type-safe approach for updating elements
+
   const updateElement = (id: string, updates: Partial<CanvasElementType>) => {
     try {
       if (!id) {
@@ -30,13 +30,13 @@ export default function useCanvasElements() {
       
       console.log(`Updating element ${id} of type ${elementToUpdate.type} with:`, updates);
       
-      // Ensure we have valid position values
+
       const hasValidPosition = (
         (updates.x !== undefined && !isNaN(updates.x)) || 
         (updates.y !== undefined && !isNaN(updates.y))
       );
       
-      // Only update position if valid values are provided
+
       const positionUpdates = hasValidPosition ? {
         x: updates.x !== undefined ? updates.x : elementToUpdate.x,
         y: updates.y !== undefined ? updates.y : elementToUpdate.y,
@@ -48,15 +48,14 @@ export default function useCanvasElements() {
             return element;
           }
           
-          // Type-guard to ensure we maintain correct element types
+
           switch (element.type) {
             case 'text':
-              // Cast to TextElement for proper type checking
+
               const textElement = element as TextElement;
               const textUpdates = updates as Partial<TextElement>;
               
-              // Check if we're trying to update only position without specifying text
-              // In that case, make sure we preserve existing text
+
               const shouldPreserveText = (
                 textUpdates.text === undefined && 
                 updates.x !== undefined &&
@@ -70,11 +69,11 @@ export default function useCanvasElements() {
                 ...textElement,
                 ...positionUpdates, // Apply position updates first
                 ...textUpdates,
-                type: 'text' as const,  // Ensure the type stays correct
+                type: 'text' as const,
                 // Prioritize position values from updates, fall back to current values
                 x: updates.x !== undefined ? updates.x : textElement.x,
                 y: updates.y !== undefined ? updates.y : textElement.y,
-                // Ensure we don't lose the text during position updates
+
                 text: textToUse
               };
               console.log(`Updated text element: x=${updatedTextElement.x}, y=${updatedTextElement.y}, text="${updatedTextElement.text}"`);
@@ -85,7 +84,7 @@ export default function useCanvasElements() {
                 ...element,
                 ...positionUpdates, // Apply position updates first
                 ...(updates as Partial<ImageElement>),
-                type: 'image' as const,  // Ensure the type stays correct
+                type: 'image' as const,
                 // Prioritize position values from updates, fall back to current values
                 x: updates.x !== undefined ? updates.x : element.x,
                 y: updates.y !== undefined ? updates.y : element.y,
@@ -98,7 +97,7 @@ export default function useCanvasElements() {
                 ...element,
                 ...positionUpdates, // Apply position updates first
                 ...(updates as Partial<ShapeElement>),
-                type: 'shape' as const,  // Ensure the type stays correct
+                type: 'shape' as const,
                 // Prioritize position values from updates, fall back to current values
                 x: updates.x !== undefined ? updates.x : element.x,
                 y: updates.y !== undefined ? updates.y : element.y,

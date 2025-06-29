@@ -1,4 +1,4 @@
-// Use literal types to help TypeScript with discriminated unions
+
 export type ElementType = 'text' | 'image' | 'shape';
 
 export interface CanvasElement {
@@ -32,5 +32,5 @@ export interface ShapeElement extends CanvasElement {
   color: string;
 }
 
-// Use a discriminated union type for better TypeScript support
+
 export type CanvasElementType = TextElement | ImageElement | ShapeElement;

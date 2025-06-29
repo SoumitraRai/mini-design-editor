@@ -21,19 +21,16 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
   const [isMoving, setIsMoving] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   
-  // Store element position and size as local state
   const [elementPosition, setElementPosition] = useState({ x: element.x, y: element.y });
   const [elementSize, setElementSize] = useState({ width: element.width, height: element.height });
   const startPosition = useRef({ x: 0, y: 0 });
   const startSize = useRef({ width: element.width, height: element.height });
   
-  // Shared values for animations
   const scale = useSharedValue(element.scale);
   const baseScale = useRef(element.scale);
   const rotation = useSharedValue(element.rotation);
   const baseRotation = useRef(element.rotation);
   
-  // Detect problematic position resets
   const isDefaultPosition = useRef(false);
   useEffect(() => {
     if (element.x === 150 && element.y === 150) {
@@ -43,12 +40,10 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     }
   }, [element.x, element.y]);
   
-  // Update position when element ID changes
   useEffect(() => {
     setElementPosition({ x: element.x, y: element.y });
   }, [element.id]);
   
-  // Position sync logic with safeguards
   useEffect(() => {
     const shouldUpdatePosition = (
       !isSelected && !isDefaultPosition.current
@@ -59,7 +54,6 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     }
   }, [element.x, element.y, isSelected]);
   
-  // Update size when element props change
   useEffect(() => {
     setElementSize({ width: element.width, height: element.height });
     scale.value = element.scale;
@@ -68,7 +62,6 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     baseRotation.current = element.rotation;
   }, [element.width, element.height, element.scale, element.rotation]);
   
-  // Handle selection with position preservation
   const handlePress = () => {
     const currentPos = {
       x: elementPosition.x,
@@ -78,7 +71,7 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     onSelect();
     
     setTimeout(() => {
-      console.log(`Preserving shape position after selection: (${currentPos.x}, ${currentPos.y})`);
+      console.log(`Keeping our shape exactly at (${currentPos.x}, ${currentPos.y})`);
       onUpdate({
         x: currentPos.x,
         y: currentPos.y
@@ -86,7 +79,6 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     }, 50);
   };
   
-  // Create a drag gesture for moving the shape
   const dragStartPositionX = useSharedValue(0);
   const dragStartPositionY = useSharedValue(0);
   
@@ -122,12 +114,9 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     .onStart(() => {
       console.log("Drag gesture started on shape");
       
-      // Get the REAL current position, avoiding defaults
       let currentX = elementPosition.x;
       let currentY = elementPosition.y;
       
-      // Fix for the position reset issue - never allow the default position
-      // to override a valid position during dragging
       if (currentX === 150 && currentY === 150) {
         if (element.x !== 150 || element.y !== 150) {
           currentX = element.x;
@@ -138,7 +127,6 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
         }
       }
       
-      // Store the position for drag calculations
       dragStartPositionX.value = currentX;
       dragStartPositionY.value = currentY;
       
@@ -167,11 +155,10 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
       }
     });
 
-  // Setup pinch gesture for resizing
   const pinchGesture = Gesture.Pinch()
     .enabled(isSelected)
     .onStart(() => {
-      console.log("Shape pinch gesture started");
+      console.log("Pinching to resize this shape");
       setIsResizing(true);
       startSize.current = { 
         width: elementSize.width, 
@@ -195,9 +182,10 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     })
     .onEnd((e) => {
       if (isSelected) {
-        console.log("Shape pinch gesture ended");
+        console.log("Done resizing the shape");
         setIsResizing(false);
         
+
         const finalScale = baseScale.current * e.scale;
         const finalWidth = startSize.current.width * e.scale;
         const finalHeight = startSize.current.height * e.scale;
@@ -210,8 +198,7 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
       }
     });
 
-  // Setup rotation gesture
-  // Track rotation state for UI feedback
+
   const [isRotating, setIsRotating] = useState(false);
   const setIsRotatingJS = (rotating: boolean) => {
     setIsRotating(rotating);
@@ -227,7 +214,7 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     });
   };
   
-  // Setup rotation gesture
+
   const rotationGesture = Gesture.Rotation()
     .enabled(isSelected)
     .onStart(() => {
@@ -247,14 +234,14 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
       }
     });
     
-  // Combine all gestures
+
   const combinedGestures = Gesture.Simultaneous(
     pinchGesture, 
     rotationGesture,
     dragGesture
   );
 
-  // Create animated style for the shape container
+
   const animatedShapeStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -264,7 +251,7 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
     };
   });
   
-  // Render the appropriate shape based on shapeType
+
   const renderShape = () => {
     switch (element.shapeType) {
       case 'circle':
@@ -293,7 +280,6 @@ const ShapeLayer: React.FC<ShapeLayerProps> = ({
         );
         
       case 'star':
-        // A simple approximation of a star
         return (
           <View style={styles.starContainer}>
             <View style={[
@@ -378,9 +364,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Shape styles
+
   circle: {
-    borderRadius: 999, // Large value to ensure circle
+    borderRadius: 999,
     width: '100%',
     height: '100%',
   },
@@ -403,8 +389,6 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: 'yellow',
     borderRadius: 8,
-    // clipPath not supported in React Native by default
-    // Using a simpler approximation with background color
   },
   defaultShape: {
     width: '100%',

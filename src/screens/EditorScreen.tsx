@@ -9,7 +9,7 @@ import { TextElement, ImageElement, ShapeElement } from '../types';
 const EditorScreen: React.FC = () => {
   const canvasRef = useRef<CanvasRef>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  // Add state to track canvas dimensions
+
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
   
   const {
@@ -21,23 +21,19 @@ const EditorScreen: React.FC = () => {
     removeElement,
   } = useCanvasElements();
 
-  // Get the center position of the canvas
   const getCenterPosition = () => {
-    // If canvas dimensions aren't set yet, use fallback values
     if (canvasDimensions.width === 0 || canvasDimensions.height === 0) {
-      // Estimate canvas size from screen dimensions, accounting for margins
       const screenWidth = Dimensions.get('window').width;
       const screenHeight = Dimensions.get('window').height;
       return {
-        x: screenWidth / 2 - 100, // 100 is half the width of element (200)
-        y: screenHeight / 3 - 25, // Approximate position, placed in upper third
+        x: screenWidth / 2 - 100,
+        y: screenHeight / 3 - 25,
       };
     }
     
-    // Use actual canvas dimensions if available
     return {
-      x: canvasDimensions.width / 2 - 100, // Center X, accounting for element width (200)
-      y: canvasDimensions.height / 2 - 25, // Center Y, accounting for element height
+      x: canvasDimensions.width / 2 - 100,
+      y: canvasDimensions.height / 2 - 25,
     };
   };
 
@@ -45,10 +41,7 @@ const EditorScreen: React.FC = () => {
     try {
       if (isProcessing) return;
       
-      // Get the center position
       const center = getCenterPosition();
-      
-      // Create a new text element centered in the canvas
       const newText: TextElement = {
         id: Date.now().toString(),
         type: 'text' as const,
@@ -79,10 +72,7 @@ const EditorScreen: React.FC = () => {
         return;
       }
       
-      // Get the center position
       const center = getCenterPosition();
-      
-      // Create a new image element centered in the canvas
       const newImage: ImageElement = {
         id: Date.now().toString(),
         type: 'image' as const,
@@ -105,10 +95,7 @@ const EditorScreen: React.FC = () => {
     try {
       if (isProcessing) return;
       
-      // Get the center position
       const center = getCenterPosition();
-      
-      // Create a new shape element centered in the canvas
       const newShape: ShapeElement = {
         id: Date.now().toString(),
         type: 'shape' as const,
@@ -128,20 +115,20 @@ const EditorScreen: React.FC = () => {
     }
   };
   
-  // Helper function to generate random colors for shapes
   const getRandomColor = () => {
     const colors = [
-      '#FF5733', // Red-Orange
-      '#33FF57', // Green
-      '#3357FF', // Blue
-      '#FF33A8', // Pink
-      '#33FFF6', // Cyan
-      '#F6FF33', // Yellow
-      '#C233FF', // Purple
-      '#FF8333', // Orange
-      '#33FFB8', // Teal
-      '#A0FF33', // Lime
+      '#FF5733', // A cheerful red-orange like a sunset
+      '#33FF57', // Fresh spring green
+      '#3357FF', // Ocean blue
+      '#FF33A8', // Playful pink
+      '#33FFF6', // Tropical water cyan
+      '#F6FF33', // Sunny yellow
+      '#C233FF', // Magical purple
+      '#FF8333', // Juicy orange
+      '#33FFB8', // Minty teal
+      '#A0FF33', // Electric lime
     ];
+
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
@@ -150,7 +137,7 @@ const EditorScreen: React.FC = () => {
       if (isProcessing) return;
       setIsProcessing(true);
       
-      // Dismiss keyboard and wait for UI to update
+
       Keyboard.dismiss();
       console.log("Waiting for UI to update...");
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -169,7 +156,7 @@ const EditorScreen: React.FC = () => {
         throw new Error("Canvas reference is not available");
       }
       
-      // Capture the canvas
+
       console.log("Capturing canvas...");
       const uri = await canvasRef.current.capture();
       console.log("Canvas captured with URI:", uri ? (uri.substring(0, 30) + "...") : "null");
@@ -178,7 +165,7 @@ const EditorScreen: React.FC = () => {
         throw new Error("Failed to capture canvas - URI is empty");
       }
       
-      // Save to media library
+
       console.log("Saving to gallery...");
       const asset = await MediaLibrary.saveToLibraryAsync(uri);
       console.log("Saved to gallery successfully");
@@ -194,7 +181,6 @@ const EditorScreen: React.FC = () => {
   };
 
   const handleCanvasPress = () => {
-    // Dismiss keyboard and deselect elements when canvas is pressed
     console.log("Canvas background pressed, clearing selection");
     Keyboard.dismiss();
     setSelectedElementId(null);
@@ -202,7 +188,7 @@ const EditorScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Remove the TouchableWithoutFeedback to avoid accidental deselections */}
+
       <View style={styles.container}>
         <Canvas
           ref={canvasRef}
@@ -210,7 +196,7 @@ const EditorScreen: React.FC = () => {
           selectedElementId={selectedElementId}
           onElementSelect={setSelectedElementId}
           onElementUpdate={updateElement}
-          // Pass the canvas dimensions to the Canvas component
+
           onCanvasLayout={(width, height) => setCanvasDimensions({ width, height })}
         />
         <ToolBar

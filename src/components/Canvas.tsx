@@ -18,7 +18,6 @@ interface CanvasProps {
   onCanvasLayout?: (width: number, height: number) => void;
 }
 
-// Simplified Canvas component
 const Canvas = forwardRef<CanvasRef, CanvasProps>(
   ({ elements, onElementSelect, onElementUpdate, selectedElementId, onCanvasLayout }, ref) => {
     const viewShotRef = useRef<any>(null);
@@ -34,14 +33,11 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
         try {
           setIsCapturing(true);
           
-          // Ensure we deselect any element before capturing
           const tempSelectedId = selectedElementId;
           onElementSelect('');
           
-          // Small delay to ensure UI updates before capture
           await new Promise(resolve => setTimeout(resolve, 500));
           
-          // Capture the canvas with improved settings
           const uri = await viewShotRef.current.capture({
             format: 'png',
             quality: 1,
@@ -50,7 +46,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
           
           console.log("Canvas captured successfully, URI length:", uri?.length);
           
-          // Restore selection after a small delay
           setTimeout(() => {
             if (tempSelectedId) {
               onElementSelect(tempSelectedId);
@@ -68,43 +63,32 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
     }));
 
     const handleBackgroundPress = () => {
-      // We need to check if any element is in text edit mode before deselecting
-      // This is a safety check to prevent interrupting text editing
-      
-      // First look through all text elements to see if any are in edit mode
-      // We can't directly access their state, but we can check if keyboard is visible
       const isKeyboardVisible = Keyboard.isVisible && Keyboard.isVisible();
       
       if (isKeyboardVisible) {
-        console.log("Keyboard is visible, likely editing text. Ignoring background press.");
-        return; // Don't deselect if keyboard is visible (editing text)
+        console.log("Someone's typing! Let's not interrupt them by deselecting.");
+        return;
       }
       
-      // If not editing text, dismiss keyboard
       Keyboard.dismiss();
       
-      // Deselect all elements when background is pressed
-      // Using setTimeout to ensure this doesn't interfere with other touch events
       setTimeout(() => {
         onElementSelect('');
-      }, 150); // Slightly longer delay to ensure keyboard dismissal completes
+      }, 150);
     };
 
-    // Safely get typed elements
     const textElements = elements.filter((el): el is TextElement => el.type === 'text');
     const imageElements = elements.filter((el): el is ImageElement => el.type === 'image');
     const shapeElements = elements.filter((el): el is ShapeElement => el.type === 'shape');
 
-    // Handle layout changes to detect canvas size
-    const handleLayout = (event: any) => {
-      const { width, height } = event.nativeEvent.layout;
-      setCanvasSize({ width, height });
-      
-      // Pass dimensions to parent component if callback exists
-      if (onCanvasLayout) {
-        onCanvasLayout(width, height);
-      }
-    };
+  const handleLayout = (event: any) => {
+    const { width, height } = event.nativeEvent.layout;
+    setCanvasSize({ width, height });
+    
+    if (onCanvasLayout) {
+      onCanvasLayout(width, height);
+    }
+  };
     
     return (
       <ViewShot
@@ -122,7 +106,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
           <View style={styles.canvasBackground} />
         </TouchableWithoutFeedback>
         
-        {/* Render shape elements first (lowest z-index) */}
         {shapeElements.map(element => (
           <ShapeLayer
             key={element.id}
@@ -133,7 +116,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
           />
         ))}
         
-        {/* Render image elements next (middle z-index) */}
         {imageElements.map(element => (
           <ImageLayer
             key={element.id}
@@ -144,7 +126,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
           />
         ))}
         
-        {/* Render text elements (highest z-index) */}
         {textElements.map(element => (
           <TextLayer
             key={element.id}
@@ -155,7 +136,6 @@ const Canvas = forwardRef<CanvasRef, CanvasProps>(
           />
         ))}
         
-        {/* Show loading indicator while capturing */}
         {isCapturing && (
           <View style={styles.capturingIndicator}>
             <ActivityIndicator size="large" color="#0078ff" />

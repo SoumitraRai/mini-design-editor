@@ -10,8 +10,6 @@ interface ImageLayerProps {
   onSelect: () => void;
   onUpdate: (updates: Partial<ImageElement>) => void;
 }
-
-// Add gesture handling for movement and resizing
 const ImageLayer: React.FC<ImageLayerProps> = ({
   element,
   isSelected,
@@ -22,24 +20,19 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
   const [isMoving, setIsMoving] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   
-  // Store element position as local state
   const [elementPosition, setElementPosition] = useState({ x: element.x, y: element.y });
   const [elementSize, setElementSize] = useState({ width: element.width, height: element.height });
   const startPosition = useRef({ x: 0, y: 0 });
   const startSize = useRef({ width: element.width, height: element.height });
   
-  // Shared values for animations
   const scale = useSharedValue(element.scale);
   const baseScale = useRef(element.scale);
   
-  // Shared value for rotation
   const rotation = useSharedValue(element.rotation);
   const baseRotation = useRef(element.rotation);
   
-  // Detect problematic position resets
   const isDefaultPosition = useRef(false);
   useEffect(() => {
-    // Check if this is a reset to the default position
     if (element.x === 150 && element.y === 150) {
       isDefaultPosition.current = true;
     } else {
@@ -47,20 +40,15 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
     }
   }, [element.x, element.y]);
   
-  // Update the position when element props change from parent
-  // This keeps our local state in sync with props when needed
-  useEffect(() => {
-    // Update position when element coordinates change from parent
-    setElementPosition({ x: element.x, y: element.y });
-  }, [element.id]); // Only update when element ID changes (i.e., different element)
   
-  // Position sync logic with safeguards against unwanted resets
   useEffect(() => {
-    // Only sync position when appropriate and avoid default position resets
+    setElementPosition({ x: element.x, y: element.y });
+  }, [element.id]); 
+  
+  
+  useEffect(() => {
     const shouldUpdatePosition = (
-      // We're unselected (regular sync)
       !isSelected && 
-      // AND we're not seeing a problematic reset to default position
       !isDefaultPosition.current
     );
     
@@ -69,33 +57,27 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
     }
   }, [element.x, element.y, isSelected]);
   
-  // Update size when element props change
   useEffect(() => {
     setElementSize({ width: element.width, height: element.height });
     scale.value = element.scale;
     baseScale.current = element.scale;
   }, [element.width, element.height, element.scale]);
   
-  // Handle selection with position preservation
   const handlePress = () => {
-    // Set a flag to prevent position reset on selection
     const currentPos = {
       x: elementPosition.x,
       y: elementPosition.y
     };
     
-    // Select the element
     onSelect();
     
-    // Make sure we preserve the position data by updating it again
-    // This prevents position resets on quick taps
     setTimeout(() => {
-      console.log(`Preserving image position after selection: (${currentPos.x}, ${currentPos.y})`);
+      console.log(`Keeping our image right where it was at (${currentPos.x}, ${currentPos.y})`);
       onUpdate({
         x: currentPos.x,
         y: currentPos.y
       });
-    }, 50); // Slightly longer delay to ensure proper sequence
+    }, 50);
   };
   
   // Create a drag gesture for moving the image
@@ -132,25 +114,21 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
   const dragGesture = Gesture.Pan()
     .enabled(isSelected)
     .onStart(() => {
-      console.log("Drag gesture started on image");
+      console.log("Starting to drag this image around");
       
-      // Get the REAL current position, avoiding defaults
       let currentX = elementPosition.x;
       let currentY = elementPosition.y;
       
-      // Fix for the position reset issue - never allow the default position
-      // to override a valid position during dragging
       if (currentX === 150 && currentY === 150) {
         if (element.x !== 150 || element.y !== 150) {
           currentX = element.x;
           currentY = element.y;
           
           runOnJS(updateElementPositionJS)(currentX, currentY);
-          console.log(`Avoiding position reset, using saved position: x=${currentX}, y=${currentY}`);
+          console.log(`Not today, position reset! Using the real position: x=${currentX}, y=${currentY}`);
         }
       }
       
-      // Store the position for drag calculations
       dragStartPositionX.value = currentX;
       dragStartPositionY.value = currentY;
       
@@ -191,7 +169,6 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
     console.log("Pinch gesture ended");
     setIsResizing(false);
     
-    // Apply changes to parent state
     onUpdate({
       width: newWidth,
       height: newHeight,
@@ -199,11 +176,10 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
     });
   };
   
-  // Setup pinch gesture for resizing
   const pinchGesture = Gesture.Pinch()
     .enabled(isSelected)
     .onStart(() => {
-      console.log("Pinch gesture started");
+      console.log("Pinching to resize the image");
       runOnJS(setIsResizingJS)(true);
       startSize.current = { 
         width: elementSize.width, 
@@ -213,11 +189,9 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
     })
     .onUpdate((e) => {
       if (isSelected) {
-        // Update scale based on pinch
         const newScale = baseScale.current * e.scale;
         scale.value = newScale;
         
-        // Calculate new dimensions based on scale
         const newWidth = startSize.current.width * e.scale;
         const newHeight = startSize.current.height * e.scale;
         
@@ -234,27 +208,23 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
       }
     });
 
-  // Helper function for rotation completion
   const finalizeRotationJS = (finalRotation: number) => {
     console.log("Rotation gesture ended");
     
-    // Apply changes to parent state
     onUpdate({
       rotation: finalRotation
     });
   };
   
-  // Track rotation state for UI feedback
   const [isRotating, setIsRotating] = useState(false);
   const setIsRotatingJS = (rotating: boolean) => {
     setIsRotating(rotating);
   };
   
-  // Setup rotation gesture
   const rotationGesture = Gesture.Rotation()
     .enabled(isSelected)
     .onStart(() => {
-      console.log("Rotation gesture started");
+      console.log("Starting to spin this image around");
       baseRotation.current = rotation.value;
       runOnJS(setIsRotatingJS)(true);
     })
@@ -271,14 +241,12 @@ const ImageLayer: React.FC<ImageLayerProps> = ({
       }
     });
     
-  // Combine all gestures
   const combinedGestures = Gesture.Simultaneous(
     pinchGesture,
     rotationGesture,
     dragGesture
   );
 
-  // Create animated style for the image container
   const animatedImageStyle = useAnimatedStyle(() => {
     return {
       transform: [

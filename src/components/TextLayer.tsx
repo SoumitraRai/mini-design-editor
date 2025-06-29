@@ -10,8 +10,6 @@ interface TextLayerProps {
   onSelect: () => void;
   onUpdate: (updates: Partial<TextElement>) => void;
 }
-
-// Add gesture handling for movement
 const TextLayer: React.FC<TextLayerProps> = ({
   element,
   isSelected,
@@ -24,31 +22,24 @@ const TextLayer: React.FC<TextLayerProps> = ({
   const [dragStarted, setDragStarted] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   
-  // Use a ref to track the most recent text value and prevent it from being overwritten
   const currentTextRef = useRef(element.text);
   
-  // Update currentText if element text changes externally
   useEffect(() => {
-    // Only update if the text actually changed and is not the default text
     if (element.text !== "Tap to edit" || currentTextRef.current === "Tap to edit") {
       setCurrentText(element.text);
       currentTextRef.current = element.text;
     }
   }, [element.text]);
   
-  // Store the initial position and gesture position for calculations
   const [elementPosition, setElementPosition] = useState({ x: element.x, y: element.y });
   
-  // Set up shared values for animations
   const scale = useSharedValue(element.scale);
   const fontSize = useSharedValue(element.fontSize);
   const baseFontSize = useRef(element.fontSize);
   const startPosition = useRef({ x: 0, y: 0 });
   
-  // Detect problematic position resets (sudden jumps to 150,150)
   const isDefaultPosition = useRef(false);
   useEffect(() => {
-    // Check if this is a reset to the default position
     if (element.x === 150 && element.y === 150) {
       isDefaultPosition.current = true;
     } else {
@@ -56,20 +47,13 @@ const TextLayer: React.FC<TextLayerProps> = ({
     }
   }, [element.x, element.y]);
 
-  // Update the position when element props change from parent
-  // This keeps our local state in sync with props when needed
   useEffect(() => {
-    // Only update position on element ID change (new element)
     setElementPosition({ x: element.x, y: element.y });
   }, [element.id]); 
   
-  // Position sync logic with safeguards against unwanted resets
   useEffect(() => {
-    // Only sync position when appropriate and avoid default position resets
     const shouldUpdatePosition = (
-      // We're unselected and not editing (regular sync)
       (!isSelected && !isEditing) && 
-      // AND we're not seeing a problematic reset to default position
       !isDefaultPosition.current
     );
     
@@ -96,11 +80,9 @@ const TextLayer: React.FC<TextLayerProps> = ({
   
   const finalizePositionJS = (x: number, y: number, distance: number) => {
     if (distance > 5) {
-      // ALWAYS use the saved text in currentTextRef to ensure we don't lose edited text
       const textToUse = currentTextRef.current || element.text;
       console.log(`Final text position: x=${x}, y=${y}, preserving text: ${textToUse}`);
       
-      // Update the element with the final position AND current saved text
       onUpdate({
         x,
         y,
@@ -109,11 +91,8 @@ const TextLayer: React.FC<TextLayerProps> = ({
     } else {
       console.log("Movement too small, treating as tap instead of drag");
       
-      // If it was a very small movement (like a tap), and the element is already
-      // selected, consider treating it as a double-tap for editing
       if (distance < 2) {
         console.log("Small movement on selected element, treating as edit request");
-        // Add a small delay to prevent conflicts with other handlers
         setTimeout(() => {
           handleEdit();
         }, 10);
@@ -128,11 +107,9 @@ const TextLayer: React.FC<TextLayerProps> = ({
     .onStart(() => {
       console.log("Drag gesture started on text");
       
-      // Get the REAL current position, avoiding defaults
       let currentX = elementPosition.x;
       let currentY = elementPosition.y;
       
-      // Fix for the position reset issue
       if (currentX === 150 && currentY === 150) {
         if (element.x !== 150 || element.y !== 150) {
           currentX = element.x;
@@ -143,7 +120,6 @@ const TextLayer: React.FC<TextLayerProps> = ({
         }
       }
       
-      // Store the position for drag calculations
       dragStartPositionX.value = currentX;
       dragStartPositionY.value = currentY;
       
@@ -156,7 +132,6 @@ const TextLayer: React.FC<TextLayerProps> = ({
           Math.pow(event.translationX, 2) + Math.pow(event.translationY, 2)
         );
         
-        // Only start dragging if movement is significant
         if (movementDistance > 5 || dragStarted) {
           const newX = dragStartPositionX.value + event.translationX;
           const newY = dragStartPositionY.value + event.translationY;
@@ -178,142 +153,114 @@ const TextLayer: React.FC<TextLayerProps> = ({
       }
     });
   
-  // Handle selection with position and content preservation
   const handlePress = () => {
-    // If already selected, consider a double-tap to enter edit mode
     if (isSelected) {
-      console.log("Element already selected, treating as edit request");
+      console.log("This text is already selected - they probably want to edit it");
       handleEdit();
       return;
     }
     
-    // Set a flag to prevent position reset on selection
     const currentPos = {
       x: elementPosition.x,
       y: elementPosition.y
     };
     
-    // Ensure we have the latest text content to preserve
-    // Use currentTextRef as source of truth for the text content
     const textToPreserve = currentTextRef.current || element.text;
     
-    // Select the element
     onSelect();
     
-    // Make sure we preserve both position data and text by updating it again
-    // This prevents both position resets and text resets on quick taps
     setTimeout(() => {
-      console.log(`Preserving element state after selection: pos=(${currentPos.x}, ${currentPos.y}), text="${textToPreserve}"`);
+      console.log(`Making sure our text stays put at (${currentPos.x}, ${currentPos.y}) and still says "${textToPreserve}"`);
       onUpdate({
         x: currentPos.x,
         y: currentPos.y,
         text: textToPreserve
       });
-    }, 50); // Slightly longer delay to ensure proper sequence
+    }, 50);
   };
 
-  // Handle edit button press
   const handleEdit = () => {
     try {
-      console.log("Entering text edit mode");
+      console.log("Let's edit this text");
       
-      // Store current text and position before entering edit mode
       currentTextRef.current = element.text;
       setCurrentText(element.text);
       
-      // Store position to ensure we don't lose it during editing
       const currentPos = {
         x: elementPosition.x,
         y: elementPosition.y
       };
       setElementPosition(currentPos);
       
-      // Enter edit mode
       setIsEditing(true);
       
-      // Log the state for debugging
-      console.log(`Edit mode activated with text="${element.text}" at position (${currentPos.x}, ${currentPos.y})`);
+      console.log(`Editing text that says "${element.text}" at position (${currentPos.x}, ${currentPos.y})`);
     } catch (error) {
-      console.error("Error when enabling text edit mode:", error);
+      console.error("Oops! Something went wrong with text editing:", error);
     }
   };
 
-  // Handle text input change
   const handleChangeText = (newText: string) => {
     try {
       console.log("Text changed to:", newText);
       setCurrentText(newText);
-      // Update our ref to track the latest text value
       currentTextRef.current = newText;
     } catch (error) {
       console.error("Error when changing text:", error);
     }
   };
 
-  // Handle finishing editing
   const handleEndEditing = () => {
     try {
-      // First, check if we're still in edit mode (guard against duplicate calls)
       if (!isEditing) {
-        console.log("handleEndEditing called but not in edit mode, ignoring");
+        console.log("False alarm - we're not even in edit mode");
         return;
       }
       
-      console.log("Exiting text edit mode, final text:", currentText);
+      console.log("All done editing, saving the new text:", currentText);
       
-      // Save the final text to our ref before dismissing keyboard
       const finalText = currentText || "Text";
       currentTextRef.current = finalText;
       
-      // Dismiss the keyboard first
       Keyboard.dismiss();
       
-      // Store current position to ensure we don't lose it
       const currentPos = {
         x: elementPosition.x,
         y: elementPosition.y
       };
       
-      // Exit edit mode BEFORE updating to prevent render race conditions
       setIsEditing(false);
       
-      // Slight delay to ensure keyboard is dismissed and edit mode is fully exited
       setTimeout(() => {
-        // Update both text and position at once to prevent race conditions
-        console.log(`Updating text element after editing: text="${finalText}", position=(${currentPos.x}, ${currentPos.y})`);
+        console.log(`Saving our edited text "${finalText}" at position (${currentPos.x}, ${currentPos.y})`);
         onUpdate({
           text: finalText,
           x: currentPos.x,
           y: currentPos.y
         });
         
-        // Ensure our local state matches what we just sent to parent
         setElementPosition(currentPos);
         
-        // Make sure we maintain selection after editing
         onSelect();
       }, 100);
     } catch (error) {
-      console.error("Error when ending text editing:", error);
-      setIsEditing(false); // Ensure we exit edit mode even on error
+      console.error("Oops! Something went wrong while saving our text:", error);
+      setIsEditing(false);
       
-      // Try to dismiss keyboard even on error
       try {
         Keyboard.dismiss();
       } catch (e) {
-        console.error("Failed to dismiss keyboard:", e);
+        console.error("Keyboard is being stubborn:", e);
       }
     }
   };
   
-  // Update font size when element props change
   useEffect(() => {
     fontSize.value = element.fontSize;
     baseFontSize.current = element.fontSize;
     scale.value = element.scale;
   }, [element.fontSize, element.scale]);
 
-  // Helper functions for pinch gesture
   const setIsResizingJS = (resizing: boolean) => {
     setIsResizing(resizing);
   };
@@ -322,17 +269,13 @@ const TextLayer: React.FC<TextLayerProps> = ({
     console.log("Text pinch gesture ended");
     setIsResizing(false);
     
-    // Apply changes to parent state
     onUpdate({
       fontSize: finalFontSize,
       scale: finalScale
     });
     
-    // Update local state
     fontSize.value = finalFontSize;
   };
-  
-  // Setup pinch gesture for resizing text
   const pinchGesture = Gesture.Pinch()
     .enabled(isSelected && !isEditing)
     .onStart(() => {
@@ -342,14 +285,12 @@ const TextLayer: React.FC<TextLayerProps> = ({
     })
     .onUpdate((e) => {
       if (isSelected && !isEditing) {
-        // Update font size based on pinch scale
         const newFontSize = baseFontSize.current * e.scale;
         fontSize.value = newFontSize;
       }
     })
     .onEnd((e) => {
       if (isSelected && !isEditing) {
-        // Calculate final font size
         const finalFontSize = Math.max(8, Math.min(72, baseFontSize.current * e.scale));
         const finalScale = element.scale * e.scale;
         
@@ -357,11 +298,9 @@ const TextLayer: React.FC<TextLayerProps> = ({
       }
     });
 
-  // Set up rotation gesture
   const rotationValue = useSharedValue(element.rotation);
   const baseRotationValue = useRef(element.rotation);
   
-  // Update rotation when element props change
   useEffect(() => {
     rotationValue.value = element.rotation;
     baseRotationValue.current = element.rotation;
@@ -375,13 +314,11 @@ const TextLayer: React.FC<TextLayerProps> = ({
     console.log("Text rotation gesture ended");
     setIsRotating(false);
     
-    // Apply changes to parent state
     onUpdate({
       rotation: finalRotation
     });
   };
   
-  // Setup rotation gesture
   const rotationGesture = Gesture.Rotation()
     .enabled(isSelected && !isEditing)
     .onStart(() => {
@@ -401,14 +338,12 @@ const TextLayer: React.FC<TextLayerProps> = ({
       }
     });
     
-  // Combine all gestures
   const combinedGestures = Gesture.Simultaneous(
     pinchGesture,
     rotationGesture,
     dragGesture
   );
 
-  // Create animated style for the text
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
       fontSize: fontSize.value,
@@ -418,7 +353,6 @@ const TextLayer: React.FC<TextLayerProps> = ({
     };
   });
   
-  // Create animated style for the container with rotation
   const animatedContainerStyle = useAnimatedStyle(() => {
     return {
       transform: [

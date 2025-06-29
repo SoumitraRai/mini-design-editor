@@ -56,7 +56,7 @@ const ToolBar: React.FC<ToolBarProps> = ({
         <Text>Export</Text>
       </TouchableOpacity>
       
-      {/* Shape selector modal */}
+
       <Modal
         animationType="slide"
         transparent={true}
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 80,
   },
-  // Modal styles
+
   centeredView: {
     flex: 1,
     justifyContent: 'center',
